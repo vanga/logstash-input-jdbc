@@ -170,6 +170,7 @@ module LogStash::PluginMixins::Jdbc
     begin
       @database.test_connection
     rescue Sequel::DatabaseConnectionError => e
+      @logger.error("Failed to connect to the database #{e}")
       #TODO return false and let the plugin raise a LogStash::ConfigurationError
       raise e
     end
@@ -202,10 +203,10 @@ module LogStash::PluginMixins::Jdbc
     success = false
     begin
       parameters = symbolized_params(parameters)
+      @logger.debug("Executing JDBC query", :statement => statement, :parameters => parameters)
       query = @database[statement, parameters]
       sql_last_value = @use_column_value ? @sql_last_value : Time.now.utc
       @tracking_column_warning_sent = false
-      @logger.debug? and @logger.debug("Executing JDBC query", :statement => statement, :parameters => parameters, :count => query.count)
 
       if @jdbc_paging_enabled
         query.each_page(@jdbc_page_size) do |paged_dataset|
